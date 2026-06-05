@@ -1,0 +1,41 @@
+# ── Variables d'environnement ─────────────────────────────────
+.env
+
+# ── Données scrapées ──────────────────────────────────────────
+*.json
+*.jsonl
+output/
+logs/
+
+# ── Python ────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Environnements virtuels ───────────────────────────────────
+venv/
+.venv/
+env/
+.env/
+
+# ── Docker ────────────────────────────────────────────────────
+docker-compose.override.yml
+Dockerfile
+**/Dockerfile
+
+# ── OS ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDE ───────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
