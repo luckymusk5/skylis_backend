@@ -1,22 +1,35 @@
-﻿FROM python:3.11-slim
+﻿FROM python:3.12-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV TZ=Africa/Douala
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    TZ=Africa/Douala
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        cron \
+        ca-certificates \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY insert_products.py .
+COPY scraper_utils.py .
+COPY mainscrape.py .
+COPY techdeal_scrape.py .
+COPY djoolah_scrape.py .
+COPY kmerphone_scrape.py .
+COPY nkclmarket_scrape.py .
+COPY crontab.txt .
 
-RUN mkdir -p /app/data
+RUN mkdir -p /app/output /app/logs
 
-EXPOSE 8001
+RUN chmod 0644 /app/crontab.txt \
+    && crontab /app/crontab.txt \
+    && touch /app/logs/scraper.log
 
-HEALTHCHECK --interval=20s --timeout=5s --start-period=15s --retries=5 CMD curl -f http://localhost:8001/health || exit 1
+HEALTHCHECK --interval=60s --timeout=10s --start-period=5s --retries=3 \
+    CMD pgrep cron > /dev/null || exit 1
 
-CMD ["python", "insert_products.py"]
+CMD ["cron", "-f"]
