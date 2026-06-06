@@ -6,7 +6,6 @@ on:
       - scrape
 
 env:
-  REGISTRY: ghcr.io
   IMAGE_NAME: ghcr.io/luckymusk5/skylis_backend/scraper
 
 jobs:
@@ -17,30 +16,25 @@ jobs:
       packages: write
 
     steps:
-      # ── 1. Checkout ────────────────────────────────────────────────────────
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ── 2. Login ghcr.io ───────────────────────────────────────────────────
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: luckymusk5
+          password: ${{ secrets.GHCR_TOKEN }}
 
-      # ── 3. Build & Push image ──────────────────────────────────────────────
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./scraper
-          dockerfile: ./scraper/Dockerfile
+          context: .
           push: true
           tags: |
             ${{ env.IMAGE_NAME }}:latest
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
 
-      # ── 4. Setup kubectl ───────────────────────────────────────────────────
       - name: Setup kubectl
         uses: azure/setup-kubectl@v3
 
@@ -50,20 +44,14 @@ jobs:
           echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
           chmod 600 ~/.kube/config
 
-      # ── 5. Deploy sur Node 2 (skylis/role=pipeline) ───────────────────────
       - name: Deploy to Kubernetes
         run: |
-          # Mettre à jour l'image dans le deployment
           kubectl set image deployment/scraper \
             scraper=${{ env.IMAGE_NAME }}:${{ github.sha }} \
             -n skylis-prod
-
-          # Attendre que le rollout soit terminé
           kubectl rollout status deployment/scraper \
             -n skylis-prod \
             --timeout=120s
 
-      # ── 6. Vérification ───────────────────────────────────────────────────
       - name: Verify deployment
-        run: |
-          kubectl get pods -n skylis-prod -l app=scraper
+        run: kubectl get pods -n skylis-prod -l app=scraper
